@@ -179,9 +179,19 @@ static int primary_expr(const struct scope *const s, int reg, int used)
 {
 	switch (tkn.type) {
 	case TKN_INT:
+		// TODO: Constant folding
 		arch.load_imm(reg, strtoll(tkn.data, NULL, 10));
 		lex();
 		return reg;
+
+	case TKN_IDENT: {
+		const int offset = lookup(s);
+		if (!offset)
+			fatal("'%.*s' is not in scope", (int)tkn.len, tkn.data);
+		arch.load_offs(reg, offset);
+		lex();
+		return reg;
+	}
 
 	default:
 		return -1;
@@ -235,7 +245,7 @@ static int assign_expr(const struct scope *const s, int reg, int used)
 		lexexp(TKN_EQ, "'=' in assignment");
 		lex();
 
-		const int value_reg = expr(s, reg, used);
+		const int value_reg = add_expr(s, reg, used);
 		if (value_reg < 0)
 			fatal("Expected expression in assignment, %s", found());
 

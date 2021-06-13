@@ -53,23 +53,30 @@ static void load_imm(int reg, long long val)
 	out32(val);
 }
 
+static void load_offs(int reg, int base_offset)
+{
+	static const char instrs[] = { 0x45, 0x5d, 0x4d, 0x55, 0x7d, 0x75, };
+	const char offset = 4 * (char)base_offset;
+	out8_3(0x8b, instrs[reg], offset);	// mov reg, [ebp+offset]
+}
+
 static void store_reg(int reg, int base_offset)
 {
 	static const char instrs[] = { 0x45, 0x5d, 0x4d, 0x55, 0x7d, 0x75, };
 	const char offset = 4 * (char)base_offset;
-	out8_3(0x89, instrs[reg], offset);	// mov [ebp+offs], reg
+	out8_3(0x89, instrs[reg], offset);	// mov [ebp+offset], reg
 }
 
 static void push(int reg)
 {
 	static const char instrs[] = { 0x50, 0x53, 0x51, 0x52, 0x57, 0x56, };
-	out8(instrs[reg]);
+	out8(instrs[reg]);	// push reg
 }
 
 static void pop(int reg)
 {
 	const char instrs[] = { 0x58, 0x5b, 0x59, 0x5a, 0x5f, 0x5e, };
-	out8(instrs[reg]);
+	out8(instrs[reg]);	// pop reg
 }
 
 static void add(int r1, int r2)
@@ -294,6 +301,7 @@ void arch_init_i386(void)
 	arch.prolog = prolog;
 	arch.epilog = epilog;
 	arch.load_imm = load_imm;
+	arch.load_offs = load_offs;
 	arch.store_reg = store_reg;
 	arch.push = push;
 	arch.pop = pop;

@@ -54,6 +54,7 @@ struct arch {
 	size_t (*prolog)(void);
 	void (*epilog)(void);
 	void (*load_imm)(int reg, long long val);
+	void (*load_offs)(int reg, int base_offset);
 	void (*store_reg)(int reg, int base_offset);
 	void (*push)(int reg);
 	void (*pop)(int reg);
