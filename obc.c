@@ -121,13 +121,6 @@ next:
 	return tkn.type;
 }
 
-static int lexexp(int tkntype, const char *const what)
-{
-	if (lex() != tkntype)
-		fatal("Expected %s", what);
-	return tkn.type;
-}
-
 static const char *found(void)
 {
 	const size_t n = 64;
@@ -139,6 +132,13 @@ static const char *found(void)
 		snprintf(buf, n, "found %s", tkntypestr[tkn.type]);
 
 	return buf;
+}
+
+static int lexexp(int tkntype, const char *const what)
+{
+	if (lex() != tkntype)
+		fatal("Expected %s but %s", what, found());
+	return tkn.type;
 }
 
 static void emit_start(size_t main_sym)
@@ -211,8 +211,7 @@ static int add_expr(const struct scope *const s, int reg, int used)
 
 		const int rhs = primary_expr(s, target, inner_used);
 		if (lhs < 0)
-			fatal("Expected an expression after operator but %s",
-					found());
+			fatal("Expected an expression after op, %s", found());
 
 		if (is_add)
 			arch.add(lhs, rhs);
@@ -238,7 +237,7 @@ static int assign_expr(const struct scope *const s, int reg, int used)
 
 		const int value_reg = expr(s, reg, used);
 		if (value_reg < 0)
-			fatal("Expected expression in assignment");
+			fatal("Expected expression in assignment, %s", found());
 
 		arch.store_reg(value_reg, offset);
 		return value_reg;
@@ -257,7 +256,7 @@ static int stmt(const struct scope *const s)
 	const int reg = expr(s, 0, 0);
 	if (reg >= 0) {
 		if (tkn.type != TKN_SEMI)
-			fatal("';' after statement");
+			fatal("Expected ';' after statement but %s", found());
 		lex();
 		return 1;
 	}
@@ -298,7 +297,7 @@ static struct scope populate_scope(void)
 		}
 
 		if (tkn.type != TKN_SEMI)
-			fatal("';' after var declaration");
+			fatal("Expected ';' after var decl but %s", found());
 
 		lex();
 	}
@@ -309,7 +308,7 @@ static struct scope populate_scope(void)
 static int compile_decl(void)
 {
 	if (tkn.type != TKN_IDENT)
-		return err("Expected a declaration");
+		return err("Expected a declaration but %s", found());
 
 	struct sym *sym = &symbuf[symptr++];
 	memset(sym, 0, sizeof(struct sym));
@@ -319,13 +318,13 @@ static int compile_decl(void)
 	sym->val_offset = textptr;
 
 	if (lex() != TKN_LPAREN)
-		return err("Expected '('");
+		return err("Expected '(', %s", found());
 
 	if (lex() != TKN_RPAREN)
-		return err("Expected ')'");
+		return err("Expected ')', %s", found());
 
 	if (lex() != TKN_LBRACE)
-		return err("Expected '{'");
+		return err("Expected '{', %s", found());
 
 	lex();
 
